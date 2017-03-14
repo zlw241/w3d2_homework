@@ -12,6 +12,7 @@ class QuestionsDatabase < SQLite3::Database
   end
 end
 
+
 class User
   attr_accessor :id, :fname, :lname
 
@@ -56,7 +57,16 @@ class User
   def followed_questions
     QuestionFollow.followed_questions_for_user_id(id)
   end
+
+  def liked_questions
+    QuestionLike.liked_questions_for_user_id(id)
+  end
+
+  def num_likes
+    QuestionLike.num_likes_for_user_id(id)
+  end
 end
+
 
 class Question
   attr_accessor :id, :title, :body, :author_id
@@ -92,6 +102,10 @@ class Question
     data.map { |datum| Question.new(datum) }
   end
 
+  def self.most_followed(n)
+    QuestionFollow.most_followed_questions(n)
+  end
+
   def author
     User.find_by_id(author_id)
   end
@@ -103,7 +117,16 @@ class Question
   def followers
     QuestionFollow.followers_for_question_id(id)
   end
+
+  def likers
+    QuestionLike.likers_for_question_id(id)
+  end
+
+  def num_likers
+    QuestionLike.num_likers_for_question_id(id)
+  end
 end
+
 
 class Reply
   attr_accessor :id, :question_id, :parent_id, :user_id, :body
@@ -181,6 +204,7 @@ class Reply
   end
 end
 
+
 class QuestionFollow
   attr_accessor :id, :user_id, :question_id
 
@@ -229,7 +253,26 @@ class QuestionFollow
     SQL
     data.map { |datum| User.new(datum) }
   end
+
+  def self.most_followed_questions(n)
+    data = QuestionsDatabase.instance.execute(<<-SQL, n)
+      SELECT
+        questions.*
+      FROM
+        questions
+      JOIN
+        question_follows ON questions.id = question_follows.question_id
+      GROUP BY
+        questions.id
+      ORDER BY
+        COUNT(question_follows.id) DESC
+      LIMIT
+        ?
+    SQL
+    data.map { |datum| Question.new(datum) }
+  end
 end
+
 
 class QuestionLike
   attr_accessor :id, :user_id, :question_id
@@ -250,5 +293,61 @@ class QuestionLike
         id = ?
     SQL
     QuestionLike.new(data[0])
+  end
+
+  def self.likers_for_question_id(question_id)
+    data = QuestionsDatabase.instance.execute(<<-SQL, question_id)
+      SELECT
+        users.*
+      FROM
+        users
+      JOIN
+        question_likes ON users.id = question_likes.user_id
+      WHERE
+        question_likes.question_id = ?
+    SQL
+    data.map { |datum| User.new(datum) }
+  end
+
+  def self.num_likes_for_question_id(question_id)
+    data = QuestionsDatabase.instance.execute(<<-SQL, question_id)
+      SELECT
+        COUNT(users.id) as num_likes
+      FROM
+        users
+      JOIN
+        question_likes ON users.id = question_likes.user_id
+      WHERE
+        question_likes.question_id = ?
+    SQL
+    data[0]['num_likes']
+  end
+
+  def self.liked_questions_for_user_id(user_id)
+    data = QuestionsDatabase.instance.execute(<<-SQL, user_id)
+      SELECT
+        questions.*
+      FROM
+        questions
+      JOIN
+        question_likes ON questions.id = question_likes.question_id
+      WHERE
+        question_likes.user_id = ?
+    SQL
+    data.map { |datum| Question.new(datum) }
+  end
+
+  def self.num_likes_for_user_id(user_id)
+    data = QuestionsDatabase.instance.execute(<<-SQL, user_id)
+      SELECT
+        COUNT(questions.id) as num_questions_liked
+      FROM
+        questions
+      JOIN
+        question_likes ON questions.id = question_likes.question_id
+      WHERE
+        question_likes.user_id = ?
+    SQL
+    data[0]['num_questions_liked']
   end
 end
