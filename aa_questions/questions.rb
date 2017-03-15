@@ -22,6 +22,27 @@ class User
     @lname = options['lname']
   end
 
+  def save
+    if id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, fname, lname)
+        INSERT INTO
+          users (fname, lname)
+        VALUES
+          (?, ?)
+      SQL
+      self.id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, fname, lname, id)
+        UPDATE
+          users
+        SET
+          fname = ?, lname = ?
+        WHERE
+          id = ?
+      SQL
+    end
+  end
+
   def self.find_by_id(id)
     data = QuestionsDatabase.instance.execute(<<-SQL, id)
       SELECT
@@ -65,6 +86,19 @@ class User
   def num_likes
     QuestionLike.num_likes_for_user_id(id)
   end
+
+  # def average_karma
+  #   QuestionsDatabase.instance.execute(<<-SQL, id)
+  #     SELECT
+  #       *
+  #     FROM
+  #       questions
+  #     LEFT OUTER JOIN
+  #       question_likes ON questions.id = question_likes.question_id
+  #     WHERE
+  #       question_likes.user_id = ?
+  #   SQL
+  # end
 end
 
 
@@ -76,6 +110,27 @@ class Question
     @title = options['title']
     @body = options['body']
     @author_id = options['author_id']
+  end
+
+  def save
+    if id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, title, body, author_id)
+        INSERT INTO
+          questions (title, body, author_id)
+        VALUES
+          (?, ?, ?)
+      SQL
+      self.id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, title, body, author_id, id)
+        UPDATE
+          questions
+        SET
+          title = ?, body = ?, author_id = ?
+        WHERE
+          id = ?
+      SQL
+    end
   end
 
   def self.find_by_id(id)
@@ -104,6 +159,10 @@ class Question
 
   def self.most_followed(n)
     QuestionFollow.most_followed_questions(n)
+  end
+
+  def self.most_liked(n)
+    QuestionLike.most_liked_questions(n)
   end
 
   def author
@@ -137,6 +196,27 @@ class Reply
     @parent_id = options['parent_id']
     @user_id = options['user_id']
     @body = options['body']
+  end
+
+  def save
+    if id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, question_id, parent_id, user_id, body)
+        INSERT INTO
+          replies (question_id, parent_id, user_id, body)
+        VALUES
+          (?, ?, ?, ?)
+      SQL
+      self.id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, question_id, parent_id, user_id, body, id)
+        UPDATE
+          replies
+        SET
+          question_id = ?, parent_id = ?, user_id = ?, body = ?
+        WHERE
+          id = ?
+      SQL
+    end
   end
 
   def self.find_by_id(id)
@@ -349,5 +429,23 @@ class QuestionLike
         question_likes.user_id = ?
     SQL
     data[0]['num_questions_liked']
+  end
+
+  def self.most_liked_questions(n)
+    data = QuestionsDatabase.instance.execute(<<-SQL, n)
+      SELECT
+        questions.*
+      FROM
+        questions
+      JOIN
+        question_likes ON questions.id = question_likes.question_id
+      GROUP BY
+        questions.id
+      ORDER BY
+        COUNT(question_likes.id) DESC
+      LIMIT
+        ?
+    SQL
+    data.map { |datum| Question.new(datum) }
   end
 end

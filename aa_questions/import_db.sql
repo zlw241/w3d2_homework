@@ -125,6 +125,8 @@ INSERT INTO
   questions (title, body, author_id)
 VALUES
   ('SQL', 'do join tables need a primary key?', (SELECT id FROM users WHERE fname = 'James' AND lname = 'Amaya')),
+  ('SQLite', 'how do I show the tables of a database from the sqlite shell?', (SELECT id FROM users WHERE fname = 'James' AND lname = 'Amaya')),
+  ('Misc', 'what is the answer to everything?', (SELECT id FROM users WHERE fname = 'James' AND lname = 'Amaya')),
   ('Books', 'does anyone know if getting a copy of Learning SQL by Alan Beaulieu is still required?', (SELECT id FROM users WHERE fname = 'Jonathan' AND lname = 'Lin')),
   ('Rules', 'TAs, are we allowed to sleep at the office?', (SELECT id FROM users WHERE fname = 'Boris')),
   ('Mancala', 'Did Mancala again ... can anyone tell me why the following code fails the second spec for one _side_empty?', (SELECT id FROM users WHERE fname = 'Steven' AND lname = 'Anderson')),
@@ -151,8 +153,10 @@ VALUES
   ((SELECT id FROM users WHERE fname = 'Brandon' AND lname = 'Thaler'), (SELECT id FROM questions WHERE title = 'SQL')),
   ((SELECT id FROM users WHERE fname = 'Zhuo' AND lname = 'Chen'), (SELECT id FROM questions WHERE title = 'SQL')),
   ((SELECT id FROM users WHERE fname = 'Vlad' AND lname = 'Deev'), (SELECT id FROM questions WHERE title = 'SQL')),
+  ((SELECT id FROM users WHERE fname = 'Zach' AND lname = 'Ward'), (SELECT id FROM questions WHERE title = 'SQL')),
   ((SELECT id FROM users WHERE fname = 'Zach' AND lname = 'Ward'), (SELECT id FROM questions WHERE title = 'Rules')),
   ((SELECT id FROM users WHERE fname = 'Breno' AND lname = 'Paiva'), (SELECT id FROM questions WHERE title = 'Rules')),
+  ((SELECT id FROM users WHERE fname = 'Zach' AND lname = 'Ward'), (SELECT id FROM questions WHERE title = 'SQLite')),
   ((SELECT id FROM users WHERE fname = 'Nick' AND lname = 'Char'), (SELECT id FROM questions WHERE title = 'Rules'));
 
 
